@@ -13,7 +13,23 @@
         #hanabiName { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); color: #ffb347; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 6px #000; z-index: 210; opacity: 0; transition: opacity 0.5s; text-align: center; }
         #instructions { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); color: white; text-align: center; z-index: 100; }
         .firework { position: absolute; pointer-events: none; z-index: 150; }
-        #jumpButton { position: absolute; bottom: 0; left: 0; width: 100vw; height: 70px; background: rgba(40,40,80,0.7); color: #fff; font-size: 28px; text-align: center; line-height: 70px; z-index: 300; user-select: none; border: none; outline: none; }
+        /* 修正: ジャンプボタンをfixedで常に画面下部に表示 */
+        #jumpButton {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 70px;
+            background: rgba(40,40,80,0.7);
+            color: #fff;
+            font-size: 28px;
+            text-align: center;
+            line-height: 70px;
+            z-index: 300;
+            user-select: none;
+            border: none;
+            outline: none;
+        }
         #jumpButton:active { background: rgba(80,80,160,0.7); }
         #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff4444; font-size: 40px; font-weight: bold; text-shadow: 2px 2px 6px #000; z-index: 500; display: none; text-align: center; }
         #prefectureInfo { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 20px; background: rgba(0,0,0,0.7); border-radius: 12px; padding: 16px 24px; z-index: 220; opacity: 0; transition: opacity 0.5s; max-width: 90vw; text-align: center; }
