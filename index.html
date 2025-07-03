@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花火師の旅 - 47都道府県</title>
+    <style>
+        html, body { margin: 0; padding: 0; background: #001122; font-family: 'Arial', sans-serif; overflow: hidden; user-select: none; }
+        #gameContainer { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        #gameCanvas { position: absolute; top: 0; left: 0; background: #001122; }
+        #ui, #modeSelect { position: absolute; top: 20px; left: 20px; color: white; z-index: 100; font-size: 18px; }
+        #currentPrefecture { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); color: #ffff88; font-size: 48px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); z-index: 200; opacity: 0; transition: opacity 0.5s; text-align: center; }
+        #hanabiName { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); color: #ffb347; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 6px #000; z-index: 210; opacity: 0; transition: opacity 0.5s; text-align: center; }
+        #instructions { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); color: white; text-align: center; z-index: 100; }
+        .firework { position: absolute; pointer-events: none; z-index: 150; }
+        #jumpButton { position: absolute; bottom: 0; left: 0; width: 100vw; height: 70px; background: rgba(40,40,80,0.7); color: #fff; font-size: 28px; text-align: center; line-height: 70px; z-index: 300; user-select: none; border: none; outline: none; }
+        #jumpButton:active { background: rgba(80,80,160,0.7); }
+        #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff4444; font-size: 40px; font-weight: bold; text-shadow: 2px 2px 6px #000; z-index: 500; display: none; text-align: center; }
+        #prefectureInfo { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 20px; background: rgba(0,0,0,0.7); border-radius: 12px; padding: 16px 24px; z-index: 220; opacity: 0; transition: opacity 0.5s; max-width: 90vw; text-align: center; }
+        #modeSelect { background: rgba(0,0,0,0.85); padding: 30px 40px; border-radius: 18px; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 900; display: block; text-align: center; }
+        #modeSelect button { display: block; margin: 18px auto; font-size: 22px; padding: 12px 36px; border-radius: 8px; border: none; background: #2c5530; color: #fff; cursor: pointer; transition: background 0.2s; }
+        #modeSelect button:hover { background: #3a7a48; }
+        #modeSelect label { font-size: 18px; }
+        #modeSelect select { font-size: 18px; margin: 0 8px; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui" style="display:none;">
+            <div>都道府県: <span id="prefectureCount">1/47</span></div>
+            <div>スコア: <span id="score">0</span></div>
+            <div>ライフ: <span id="life">3</span></div>
+            <div>時間: <span id="timer">0:00</span></div>
+            <div>速度: <span id="speed">1.0x</span></div>
+        </div>
+        <div id="currentPrefecture"></div>
+        <div id="hanabiName"></div>
+        <div id="prefectureInfo"></div>
+        <div id="instructions" style="display:none;">
+            <div>画面下のボタンでジャンプ！</div>
+            <div>ご当地アイテムを集めてスコアUP！</div>
+        </div>
+        <button id="jumpButton" style="display:none;">ジャンプ！</button>
+        <div id="gameOver">
+            ゲームオーバー<br>
+            <span id="finalScore"></span>
+        </div>
+        <div id="modeSelect">
+            <h2>モード選択</h2>
+            <button id="fullModeBtn">全国制覇（47都道府県）</button>
+            <button id="shortModeBtn">ショート旅（5県ランダム）</button>
+            <label>セレクト旅（県を選ぶ）</label>
+            <select id="selectPrefecture" multiple size="7" style="width:180px;vertical-align:middle;"></select>
+            <button id="selectModeBtn">この県でスタート</button>
+        </div>
+    </div>
+    <script>
+    // --- 全47都道府県データ ---
+    // 花火大会名・名物・障害物・豆知識・背景タイプ
+    const prefecturesData = [
+        {name:'北海道',hanabi:'道新・UHB花火大会',bg:'#a3d8f4',info:'札幌の大通公園や旭山動物園が有名。ラーメンやジンギスカンが名物。',item:{name:'カニ',color:'#ff8888'},obstacle:{name:'氷山',color:'#b0e0ff'},bgType:'snow'},
+        {name:'青森県',hanabi:'青森ねぶた祭協賛花火大会',bg:'#c9e4c5',info:'ねぶた祭やりんごが有名。津軽弁も特徴的。',item:{name:'りんご',color:'#ff4444'},obstacle:{name:'りんご箱',color:'#b22222'},bgType:'apple'},
+        {name:'岩手県',hanabi:'北上みちのく芸能まつり花火大会',bg:'#f3eac2',info:'わんこそばや南部鉄器が名物。世界遺産・平泉も。',item:{name:'わんこ',color:'#aaaaff'},obstacle:{name:'岩',color:'#888'},bgType:'mountain'},
+        {name:'宮城県',hanabi:'仙台七夕花火祭',bg:'#e7c8dd',info:'牛タンやずんだ餅が有名。伊達政宗の城下町。',item:{name:'牛タン',color:'#cc9966'},obstacle:{name:'牛',color:'#775533'},bgType:'city'},
+        {name:'秋田県',hanabi:'大曲の花火',bg:'#ffeebb',info:'きりたんぽやなまはげが有名。大曲は日本有数の花火大会の地。',item:{name:'きりたんぽ',color:'#ffeebb'},obstacle:{name:'木',color:'#8b5e3c'},bgType:'forest'},
+        {name:'山形県',hanabi:'山形大花火大会',bg:'#f7cac9',info:'さくらんぼや芋煮が名物。蔵王温泉も人気。',item:{name:'さくらんぼ',color:'#ff3355'},obstacle:{name:'芋煮鍋',color:'#8b5e3c'},bgType:'forest'},
+        {name:'福島県',hanabi:'須賀川市釈迦堂川花火大会',bg:'#e3eaa7',info:'赤べこや喜多方ラーメンが有名。会津若松城も。',item:{name:'赤べこ',color:'#d80000'},obstacle:{name:'赤べこ',color:'#d80000'},bgType:'mountain'},
+        {name:'茨城県',hanabi:'土浦全国花火競技大会',bg:'#e0eafc',info:'納豆やメロンが有名。筑波山や霞ヶ浦も。',item:{name:'納豆',color:'#c2b280'},obstacle:{name:'メロン',color:'#7ed957'},bgType:'mountain'},
+        {name:'栃木県',hanabi:'うつのみや花火大会',bg:'#eaeaea',info:'いちごや餃子が名物。日光東照宮も世界遺産。',item:{name:'いちご',color:'#ff5577'},obstacle:{name:'餃子',color:'#ffe4b5'},bgType:'mountain'},
+        {name:'群馬県',hanabi:'高崎まつり大花火大会',bg:'#f5e6e8',info:'焼きまんじゅうや温泉が有名。草津温泉も。',item:{name:'焼きまんじゅう',color:'#ffbb77'},obstacle:{name:'温泉まんじゅう',color:'#eebb44'},bgType:'mountain'},
+        {name:'埼玉県',hanabi:'戸田橋花火大会',bg:'#e1f7d5',info:'草加せんべいや狭山茶が有名。川越の蔵造りの町並みも人気。',item:{name:'草加せんべい',color:'#eebb44'},obstacle:{name:'せんべい缶',color:'#eebb44'},bgType:'city'},
+        {name:'千葉県',hanabi:'幕張ビーチ花火フェスタ',bg:'#f0efeb',info:'落花生や房総の海産物が名物。ディズニーランドも。',item:{name:'落花生',color:'#ffe4b5'},obstacle:{name:'ピーナッツ',color:'#ffe4b5'},bgType:'sea'},
+        {name:'東京都',hanabi:'隅田川花火大会',bg:'#e6e6fa',info:'日本の首都。浅草や東京タワーなど観光名所が多い。',item:{name:'雷門',color:'#ff4444'},obstacle:{name:'雷門',color:'#ff4444'},bgType:'city'},
+        {name:'神奈川県',hanabi:'神奈川新聞花火大会',bg:'#c9daf8',info:'シウマイや中華街が有名。横浜みなとみらいも人気。',item:{name:'シウマイ',color:'#ccc'},obstacle:{name:'中華まん',color:'#fffde4'},bgType:'sea'},
+        {name:'新潟県',hanabi:'長岡まつり大花火大会',bg:'#fffde4',info:'米どころ。笹団子や日本酒も有名。',item:{name:'米',color:'#fffde4'},obstacle:{name:'笹団子',color:'#8bc34a'},bgType:'mountain'},
+        {name:'富山県',hanabi:'北日本新聞納涼花火大会',bg:'#b2dfdb',info:'ホタルイカやます寿司が名物。立山連峰も。',item:{name:'ホタルイカ',color:'#4444aa'},obstacle:{name:'ます寿司',color:'#ff8a65'},bgType:'mountain'},
+        {name:'石川県',hanabi:'北國花火金沢大会',bg:'#ffd700',info:'金箔や加賀野菜が有名。兼六園も観光地。',item:{name:'金箔',color:'#ffd700'},obstacle:{name:'加賀野菜',color:'#7a3a9b'},bgType:'city'},
+        {name:'福井県',hanabi:'越前みなと大花火大会',bg:'#ff8888',info:'越前ガニや恐竜博物館が有名。',item:{name:'越前ガニ',color:'#ff8888'},obstacle:{name:'恐竜',color:'#8bc34a'},bgType:'sea'},
+        {name:'山梨県',hanabi:'神明の花火大会',bg:'#7a3a9b',info:'ぶどうやほうとうが名物。富士山も近い。',item:{name:'ぶどう',color:'#7a3a9b'},obstacle:{name:'ほうとう鍋',color:'#ffeebb'},bgType:'mountain'},
+        {name:'長野県',hanabi:'諏訪湖祭湖上花火大会',bg:'#ff4444',info:'りんごやそばが名物。松本城や上高地も。',item:{name:'りんご',color:'#ff4444'},obstacle:{name:'そば',color:'#bdb76b'},bgType:'mountain'},
+        {name:'岐阜県',hanabi:'長良川全国花火大会',bg:'#ff4444',info:'さるぼぼや飛騨牛が名物。白川郷も世界遺産。',item:{name:'さるぼぼ',color:'#ff4444'},obstacle:{name:'飛騨牛',color:'#775533'},bgType:'mountain'},
+        {name:'静岡県',hanabi:'安倍川花火大会',bg:'#222',info:'うなぎやお茶、富士山が有名。',item:{name:'うなぎ',color:'#222'},obstacle:{name:'お茶缶',color:'#228b22'},bgType:'sea'},
+        {name:'愛知県',hanabi:'岡崎城下家康公夏まつり花火大会',bg:'#b5651d',info:'ひつまぶしや味噌カツが名物。名古屋城も。',item:{name:'ひつまぶし',color:'#b5651d'},obstacle:{name:'味噌カツ',color:'#d2691e'},bgType:'city'},
+        {name:'三重県',hanabi:'伊勢神宮奉納全国花火大会',bg:'#ff3333',info:'伊勢えびや赤福が有名。伊勢神宮も。',item:{name:'伊勢えび',color:'#ff3333'},obstacle:{name:'赤福',color:'#b5651d'},bgType:'sea'},
+        {name:'滋賀県',hanabi:'びわ湖大花火大会',bg:'#ffeeaa',info:'鮒ずしや近江牛が名物。琵琶湖が日本最大の湖。',item:{name:'鮒ずし',color:'#ffeeaa'},obstacle:{name:'近江牛',color:'#775533'},bgType:'sea'},
+        {name:'京都府',hanabi:'京都芸術花火',bg:'#bb6b14',info:'八つ橋や抹茶が名物。清水寺や金閣寺も有名。',item:{name:'八つ橋',color:'#bb6b14'},obstacle:{name:'抹茶団子',color:'#228b22'},bgType:'castle'},
+        {name:'大阪府',hanabi:'なにわ淀川花火大会',bg:'#ff8844',info:'たこ焼きやお好み焼きが名物。通天閣やUSJも。',item:{name:'たこ焼き',color:'#ff8844'},obstacle:{name:'お好み焼き',color:'#b5651d'},bgType:'city'},
+        {name:'兵庫県',hanabi:'みなと神戸海上花火大会',bg:'#ffe4b5',info:'明石焼きや神戸牛が有名。姫路城も世界遺産。',item:{name:'明石焼き',color:'#ffe4b5'},obstacle:{name:'神戸牛',color:'#775533'},bgType:'sea'},
+        {name:'奈良県',hanabi:'なら燈花会大花火',bg:'#aaa',info:'大仏や柿の葉寿司が名物。東大寺や鹿も有名。',item:{name:'大仏',color:'#aaa'},obstacle:{name:'鹿',color:'#8b5e3c'},bgType:'mountain'},
+        {name:'和歌山県',hanabi:'港まつり花火大会',bg:'#d80000',info:'梅干しやみかんが名物。高野山も。',item:{name:'梅干し',color:'#d80000'},obstacle:{name:'みかん',color:'#ffa500'},bgType:'sea'},
+        {name:'鳥取県',hanabi:'しゃんしゃん祭花火大会',bg:'#fffde4',info:'梨や砂丘が有名。',item:{name:'梨',color:'#fffde4'},obstacle:{name:'砂丘',color:'#ffe4b5'},bgType:'mountain'},
+        {name:'島根県',hanabi:'松江水郷祭湖上花火大会',bg:'#333',info:'しじみや出雲そばが名物。出雲大社も。',item:{name:'しじみ',color:'#333'},obstacle:{name:'そば',color:'#bdb76b'},bgType:'sea'},
+        {name:'岡山県',hanabi:'おかやま桃太郎まつり納涼花火大会',bg:'#ffb6b9',info:'きびだんごや桃が名物。後楽園も有名。',item:{name:'きびだんご',color:'#ffb6b9'},obstacle:{name:'桃',color:'#ffb6b9'},bgType:'city'},
+        {name:'広島県',hanabi:'広島みなと夢花火大会',bg:'#d2691e',info:'もみじ饅頭や牡蠣が名物。原爆ドームも世界遺産。',item:{name:'もみじ饅頭',color:'#d2691e'},obstacle:{name:'牡蠣',color:'#8b5e3c'},bgType:'sea'},
+        {name:'山口県',hanabi:'関門海峡花火大会',bg:'#aee',info:'ふぐや瓦そばが名物。秋芳洞も人気。',item:{name:'ふぐ',color:'#aee'},obstacle:{name:'瓦そば',color:'#b5651d'},bgType:'sea'},
+        {name:'徳島県',hanabi:'吉野川フェスティバル花火大会',bg:'#aaff44',info:'すだちや阿波踊りが有名。鳴門の渦潮も。',item:{name:'すだち',color:'#aaff44'},obstacle:{name:'阿波踊り',color:'#ffd700'},bgType:'mountain'},
+        {name:'香川県',hanabi:'さぬき高松まつり花火大会',bg:'#fff',info:'うどんやオリーブが名物。小豆島も人気。',item:{name:'うどん',color:'#fff'},obstacle:{name:'オリーブ',color:'#228b22'},bgType:'sea'},
+        {name:'愛媛県',hanabi:'松山港まつり三津浜花火大会',bg:'#ffa500',info:'みかんや鯛めしが名物。道後温泉も。',item:{name:'みかん',color:'#ffa500'},obstacle:{name:'鯛',color:'#ff8a65'},bgType:'sea'},
+        {name:'高知県',hanabi:'高知市納涼花火大会',bg:'#4e6c50',info:'カツオのたたきやゆずが名物。坂本龍馬の故郷。',item:{name:'カツオ',color:'#4e6c50'},obstacle:{name:'ゆず',color:'#aaff44'},bgType:'sea'},
+        {name:'福岡県',hanabi:'筑後川花火大会',bg:'#ff6666',info:'明太子や博多ラーメンが名物。太宰府天満宮も。',item:{name:'明太子',color:'#ff6666'},obstacle:{name:'ラーメン',color:'#ffeebb'},bgType:'city'},
+        {name:'佐賀県',hanabi:'九州花火大会',bg:'#6b3e26',info:'佐賀牛や有田焼が名物。吉野ヶ里遺跡も。',item:{name:'佐賀牛',color:'#6b3e26'},obstacle:{name:'有田焼',color:'#fff'},bgType:'mountain'},
+        {name:'長崎県',hanabi:'ながさきみなとまつり花火大会',bg:'#ffd700',info:'カステラやちゃんぽんが名物。グラバー園も。',item:{name:'カステラ',color:'#ffd700'},obstacle:{name:'ちゃんぽん',color:'#ffeebb'},bgType:'sea'},
+        {name:'熊本県',hanabi:'やつしろ全国花火競技大会',bg:'#ff4444',info:'スイカや馬刺しが名物。熊本城も有名。',item:{name:'スイカ',color:'#ff4444'},obstacle:{name:'馬刺し',color:'#b5651d'},bgType:'mountain'},
+        {name:'大分県',hanabi:'大分合同新聞納涼花火大会',bg:'#99ff99',info:'かぼすやとり天が名物。別府温泉も。',item:{name:'かぼす',color:'#99ff99'},obstacle:{name:'とり天',color:'#ffeebb'},bgType:'mountain'},
+        {name:'宮崎県',hanabi:'みやざき納涼花火大会',bg:'#ffbb44',info:'マンゴーやチキン南蛮が名物。青島や高千穂峡も。',item:{name:'マンゴー',color:'#ffbb44'},obstacle:{name:'チキン南蛮',color:'#ffeebb'},bgType:'sea'},
+        {name:'鹿児島県',hanabi:'サマーナイト大花火大会',bg:'#222',info:'黒豚やさつま揚げが名物。桜島も有名。',item:{name:'黒豚',color:'#222'},obstacle:{name:'さつま揚げ',color:'#ffeebb'},bgType:'mountain'},
+        {name:'沖縄県',hanabi:'海洋博公園花火大会',bg:'#ffcc44',info:'シーサーやゴーヤが名物。美ら海水族館や首里城も。',item:{name:'シーサー',color:'#ffcc44'},obstacle:{name:'ゴーヤ',color:'#228b22'},bgType:'sea'}
+    ];
+
+    // --- FireworksJourneyGameクラス本体 ---
+    class FireworksJourneyGame {
+        constructor(selectedPrefectures) {
+            this.canvas = document.getElementById('gameCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.resizeCanvas();
+
+            this.prefectures = selectedPrefectures;
+            this.currentPrefectureIndex = 0;
+            this.sectionStartTime = Date.now();
+            this.gameSpeed = 1.0;
+            this.score = 0;
+            this.life = 3;
+            this.sectionTimeLimit = 60; // 1県あたり1分
+
+            // プレイヤー
+            this.player = {
+                x: 100,
+                y: this.canvas.height - 150,
+                width: 40,
+                height: 60,
+                velocityY: 0,
+                isJumping: false,
+                groundY: this.canvas.height - 150,
+                animFrame: 0
+            };
+
+            this.obstacles = [];
+            this.items = [];
+            this.background = { offset: 0 };
+            this.stars = this.generateStars();
+            this.isGameRunning = true;
+
+            this.setupControls();
+            this.gameLoop();
+            this.showCurrentPrefecture();
+            this.showInstructions();
+            this.playBGM();
+        }
+
+        resizeCanvas() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            if (this.player) {
+                this.player.groundY = this.canvas.height - 150;
+            }
+        }
+
+        generateStars() {
+            const stars = [];
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * this.canvas.width * 3,
+                    y: Math.random() * this.canvas.height * 0.6,
+                    size: Math.random() * 2 + 1,
+                    brightness: Math.random()
+                });
+            }
+            return stars;
+        }
+
+        setupControls() {
+            // ジャンプ操作
+            const jump = () => {
+                if (!this.player.isJumping && this.isGameRunning) {
+                    this.player.velocityY = -15;
+                    this.player.isJumping = true;
+                }
+            };
+            document.getElementById('jumpButton').addEventListener('click', jump);
+            document.getElementById('jumpButton').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                jump();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    jump();
+                }
+            });
+            window.addEventListener('resize', () => {
+                this.resizeCanvas();
+            });
+        }
+
+        update() {
+            if (!this.isGameRunning) return;
+
+            // プレイヤー物理
+            this.player.velocityY += 0.8;
+            this.player.y += this.player.velocityY;
+            if (this.player.y >= this.player.groundY) {
+                this.player.y = this.player.groundY;
+                this.player.velocityY = 0;
+                this.player.isJumping = false;
+            }
+
+            // 背景スクロール
+            this.background.offset += this.gameSpeed * 2;
+
+            // 星スクロール
+            this.stars.forEach(star => {
+                star.x -= this.gameSpeed * 0.5;
+                if (star.x < -10) {
+                    star.x = this.canvas.width + Math.random() * 200;
+                    star.y = Math.random() * this.canvas.height * 0.6;
+                }
+            });
+
+            // アイテム生成
+            if (Math.random() < 0.012) {
+                const item = this.prefectures[this.currentPrefectureIndex].item;
+                this.items.push({
+                    x: this.canvas.width,
+                    y: this.player.groundY - 30 - Math.random()*50,
+                    width: 30,
+                    height: 30,
+                    color: item.color,
+                    name: item.name
+                });
+            }
+            // アイテム移動・取得判定
+            this.items = this.items.filter(item => {
+                item.x -= this.gameSpeed * 2;
+                if (
+                    this.player.x < item.x + item.width &&
+                    this.player.x + this.player.width > item.x &&
+                    this.player.y < item.y + item.height &&
+                    this.player.y + this.player.height > item.y
+                ) {
+                    this.score += 100;
+                    this.launchFireworks();
+                    return false;
+                }
+                return item.x > -item.width;
+            });
+
+            // 障害物生成
+            if (Math.random() < 0.022) {
+                const obs = this.prefectures[this.currentPrefectureIndex].obstacle;
+                this.obstacles.push({
+                    x: this.canvas.width,
+                    y: this.player.groundY + 20,
+                    width: 30,
+                    height: 50,
+                    color: obs.color,
+                    name: obs.name
+                });
+            }
+            // 障害物移動・当たり判定
+            this.obstacles = this.obstacles.filter(obstacle => {
+                obstacle.x -= this.gameSpeed * 3;
+                if (
+                    this.player.x < obstacle.x + obstacle.width &&
+                    this.player.x + this.player.width > obstacle.x &&
+                    this.player.y < obstacle.y + obstacle.height &&
+                    this.player.y + this.player.height > obstacle.y
+                ) {
+                    this.life -= 1;
+                    this.player.x = Math.max(50, this.player.x - 10);
+                    if (this.life <= 0) this.gameOver();
+                    return false;
+                }
+                return obstacle.x > -obstacle.width;
+            });
+
+            this.checkSectionTime();
+            this.updateUI();
+        }
+
+        checkSectionTime() {
+            const elapsed = (Date.now() - this.sectionStartTime) / 1000;
+            if (elapsed >= this.sectionTimeLimit) {
+                this.completePrefecture();
+            }
+        }
+
+        completePrefecture() {
+            this.currentPrefectureIndex++;
+            this.sectionStartTime = Date.now();
+            this.gameSpeed += 0.12;
+            if (this.currentPrefectureIndex >= this.prefectures.length) {
+                this.completeGame();
+                return;
+            }
+            this.showCurrentPrefecture();
+            this.launchFireworks(true); // ご当地花火
+            this.showPrefectureInfo();
+            this.playBGM();
+        }
+
+        showCurrentPrefecture() {
+            const prefectureElement = document.getElementById('currentPrefecture');
+            const hanabiElement = document.getElementById('hanabiName');
+            const data = this.prefectures[this.currentPrefectureIndex];
+            prefectureElement.textContent = data.name;
+            prefectureElement.style.opacity = '1';
+            hanabiElement.textContent = data.hanabi ? `「${data.hanabi}」` : '';
+            hanabiElement.style.opacity = '1';
+            setTimeout(() => {
+                prefectureElement.style.opacity = '0';
+                hanabiElement.style.opacity = '0';
+            }, 2500);
+        }
+
+        showPrefectureInfo() {
+            const info = this.prefectures[this.currentPrefectureIndex].info;
+            const infoDiv = document.getElementById('prefectureInfo');
+            infoDiv.textContent = info;
+            infoDiv.style.opacity = '1';
+            setTimeout(() => {
+                infoDiv.style.opacity = '0';
+            }, 4000);
+        }
+
+        showInstructions() {
+            document.getElementById('instructions').style.display = 'block';
+        }
+
+        launchFirework
