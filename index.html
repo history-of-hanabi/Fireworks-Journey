@@ -107,11 +107,6 @@
         {name:'鹿児島県',hanabi:'サマーナイト大花火大会',bg:'#222',info:'黒豚やさつま揚げが名物。桜島も有名。',item:{name:'黒豚',color:'#222'},obstacle:{name:'さつま揚げ',color:'#ffeebb'},bgType:'mountain'},
         {name:'沖縄県',hanabi:'海洋博公園花火大会',bg:'#ffcc44',info:'シーサーやゴーヤが名物。美ら海水族館や首里城も。',item:{name:'シーサー',color:'#ffcc44'},obstacle:{name:'ゴーヤ',color:'#228b22'},bgType:'sea'}
     ];
-
-    // --- 以降は前回の完全修正版のまま貼り付けてください ---
-    // populatePrefectureSelect, FireworksJourneyGame, startGameWithPrefectures など
-    // （省略）
-
     // --- セレクト旅用セレクトボックス生成 ---
     function populatePrefectureSelect() {
         const select = document.getElementById('selectPrefecture');
@@ -128,8 +123,333 @@
     let currentGameInstance = null;
 
     // --- FireworksJourneyGameクラス本体 ---
-    // （前回の修正版のFireworksJourneyGameクラスをここに貼り付けてください）
+    class FireworksJourneyGame {
+        constructor(selectedPrefectures) {
+            if (currentGameInstance && currentGameInstance._cancelAnimationFrame) {
+                currentGameInstance._cancelAnimationFrame();
+            }
+            currentGameInstance = this;
 
+            this.canvas = document.getElementById('gameCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.resizeCanvas();
+
+            this.prefectures = selectedPrefectures;
+            this.currentPrefectureIndex = 0;
+            this.sectionStartTime = Date.now();
+            this.gameSpeed = 1.0;
+            this.score = 0;
+            this.life = 3;
+            this.sectionTimeLimit = 60; // 1県あたり1分
+
+            this.player = {
+                x: 100,
+                y: this.canvas.height - 150,
+                width: 40,
+                height: 60,
+                velocityY: 0,
+                isJumping: false,
+                groundY: this.canvas.height - 150,
+                animFrame: 0
+            };
+
+            this.obstacles = [];
+            this.items = [];
+            this.background = { offset: 0 };
+            this.stars = this.generateStars();
+            this.isGameRunning = true;
+
+            this._gameLoopId = null;
+
+            this.setupControls();
+            this.showCurrentPrefecture();
+            this.showInstructions();
+            this.playBGM();
+
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('jumpButton').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+
+            this.updateUI();
+            this.gameLoop();
+        }
+
+        _cancelAnimationFrame() {
+            if (this._gameLoopId) {
+                cancelAnimationFrame(this._gameLoopId);
+                this._gameLoopId = null;
+            }
+        }
+
+        resizeCanvas() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            if (this.player) {
+                this.player.groundY = this.canvas.height - 150;
+                if (!this.player.isJumping) {
+                    this.player.y = this.player.groundY;
+                }
+            }
+        }
+
+        generateStars() {
+            const stars = [];
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * this.canvas.width * 3,
+                    y: Math.random() * this.canvas.height * 0.6,
+                    size: Math.random() * 2 + 1,
+                    brightness: Math.random()
+                });
+            }
+            return stars;
+        }
+
+        setupControls() {
+            const jump = () => {
+                if (!this.player.isJumping && this.isGameRunning) {
+                    this.player.velocityY = -15;
+                    this.player.isJumping = true;
+                }
+            };
+            const jumpBtn = document.getElementById('jumpButton');
+            jumpBtn.onclick = jump;
+            jumpBtn.ontouchstart = (e) => { e.preventDefault(); jump(); };
+            if (!this._keydownListener) {
+                this._keydownListener = (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        jump();
+                    }
+                };
+                document.addEventListener('keydown', this._keydownListener);
+            }
+            if (!this._resizeListener) {
+                this._resizeListener = () => this.resizeCanvas();
+                window.addEventListener('resize', this._resizeListener);
+            }
+        }
+
+        update() {
+            if (!this.isGameRunning) return;
+
+            this.player.velocityY += 0.8;
+            this.player.y += this.player.velocityY;
+            if (this.player.y >= this.player.groundY) {
+                this.player.y = this.player.groundY;
+                this.player.velocityY = 0;
+                this.player.isJumping = false;
+            }
+
+            this.background.offset += this.gameSpeed * 2;
+
+            this.stars.forEach(star => {
+                star.x -= this.gameSpeed * 0.5;
+                if (star.x < -10) {
+                    star.x = this.canvas.width + Math.random() * 200;
+                    star.y = Math.random() * this.canvas.height * 0.6;
+                }
+            });
+
+            if (Math.random() < 0.012) {
+                const item = this.prefectures[this.currentPrefectureIndex].item;
+                this.items.push({
+                    x: this.canvas.width,
+                    y: this.player.groundY - 30 - Math.random()*50,
+                    width: 30,
+                    height: 30,
+                    color: item.color,
+                    name: item.name
+                });
+            }
+            this.items = this.items.filter(item => {
+                item.x -= this.gameSpeed * 2;
+                if (
+                    this.player.x < item.x + item.width &&
+                    this.player.x + this.player.width > item.x &&
+                    this.player.y < item.y + item.height &&
+                    this.player.y + this.player.height > item.y
+                ) {
+                    this.score += 100;
+                    this.launchFireworks();
+                    return false;
+                }
+                return item.x > -item.width;
+            });
+
+            if (Math.random() < 0.022) {
+                const obs = this.prefectures[this.currentPrefectureIndex].obstacle;
+                this.obstacles.push({
+                    x: this.canvas.width,
+                    y: this.player.groundY + 20,
+                    width: 30,
+                    height: 50,
+                    color: obs.color,
+                    name: obs.name
+                });
+            }
+            this.obstacles = this.obstacles.filter(obstacle => {
+                obstacle.x -= this.gameSpeed * 3;
+                if (
+                    this.player.x < obstacle.x + obstacle.width &&
+                    this.player.x + this.player.width > obstacle.x &&
+                    this.player.y < obstacle.y + obstacle.height &&
+                    this.player.y + this.player.height > obstacle.y
+                ) {
+                    this.life -= 1;
+                    this.player.x = Math.max(50, this.player.x - 10);
+                    if (this.life <= 0) this.gameOver();
+                    return false;
+                }
+                return obstacle.x > -obstacle.width;
+            });
+
+            this.checkSectionTime();
+            this.updateUI();
+        }
+
+        checkSectionTime() {
+            const elapsed = (Date.now() - this.sectionStartTime) / 1000;
+            if (elapsed >= this.sectionTimeLimit) {
+                this.completePrefecture();
+            }
+        }
+
+        completePrefecture() {
+            this.currentPrefectureIndex++;
+            this.sectionStartTime = Date.now();
+            this.gameSpeed += 0.12;
+            if (this.currentPrefectureIndex >= this.prefectures.length) {
+                this.completeGame();
+                return;
+            }
+            this.showCurrentPrefecture();
+            this.launchFireworks(true);
+            this.showPrefectureInfo();
+            this.playBGM();
+        }
+
+        showCurrentPrefecture() {
+            const prefectureElement = document.getElementById('currentPrefecture');
+            const hanabiElement = document.getElementById('hanabiName');
+            const data = this.prefectures[this.currentPrefectureIndex];
+            prefectureElement.textContent = data.name;
+            prefectureElement.style.opacity = '1';
+            hanabiElement.textContent = data.hanabi ? `「${data.hanabi}」` : '';
+            hanabiElement.style.opacity = '1';
+            setTimeout(() => {
+                prefectureElement.style.opacity = '0';
+                hanabiElement.style.opacity = '0';
+            }, 2500);
+        }
+
+        showPrefectureInfo() {
+            const info = this.prefectures[this.currentPrefectureIndex].info;
+            const infoDiv = document.getElementById('prefectureInfo');
+            infoDiv.textContent = info;
+            infoDiv.style.opacity = '1';
+            setTimeout(() => {
+                infoDiv.style.opacity = '0';
+            }, 4000);
+        }
+
+        showInstructions() {
+            document.getElementById('instructions').style.display = 'block';
+        }
+
+        launchFireworks(isBig) {
+            const div = document.createElement('div');
+            div.className = 'firework';
+            div.style.left = (this.player.x + 50) + 'px';
+            div.style.top = (this.player.y - 60) + 'px';
+            div.style.width = isBig ? '80px' : '40px';
+            div.style.height = isBig ? '80px' : '40px';
+            div.style.background = 'radial-gradient(circle, #fff 0%, #f90 60%, transparent 100%)';
+            div.style.borderRadius = '50%';
+            div.style.opacity = '0.8';
+            div.style.pointerEvents = 'none';
+            div.style.zIndex = 400;
+            document.body.appendChild(div);
+            setTimeout(() => { div.remove(); }, 800);
+        }
+
+        playBGM() {
+            // BGM未実装。必要ならここでAudio再生
+        }
+
+        updateUI() {
+            document.getElementById('score').textContent = this.score;
+            document.getElementById('life').textContent = this.life;
+            document.getElementById('prefectureCount').textContent = `${this.currentPrefectureIndex+1}/${this.prefectures.length}`;
+            const elapsed = Math.floor((Date.now() - this.sectionStartTime)/1000);
+            const remain = Math.max(0, this.sectionTimeLimit - elapsed);
+            document.getElementById('timer').textContent = `${Math.floor(remain/60)}:${('0'+(remain%60)).slice(-2)}`;
+            document.getElementById('speed').textContent = `${this.gameSpeed.toFixed(1)}x`;
+        }
+
+        gameOver() {
+            this.isGameRunning = false;
+            this._cancelAnimationFrame();
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('finalScore').textContent = `スコア: ${this.score}`;
+            document.getElementById('jumpButton').style.display = 'none';
+        }
+
+        completeGame() {
+            this.isGameRunning = false;
+            this._cancelAnimationFrame();
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('finalScore').textContent = `クリア！スコア: ${this.score}`;
+            document.getElementById('jumpButton').style.display = 'none';
+        }
+
+        gameLoop() {
+            if (!this.isGameRunning) return;
+            this.update();
+            this.draw();
+            this._gameLoopId = requestAnimationFrame(() => this.gameLoop());
+        }
+
+        draw() {
+            this.ctx.fillStyle = this.prefectures[this.currentPrefectureIndex].bg || '#001122';
+            this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.7;
+            this.stars.forEach(star => {
+                this.ctx.beginPath();
+                this.ctx.arc(star.x % this.canvas.width, star.y, star.size, 0, Math.PI*2);
+                this.ctx.fillStyle = `rgba(255,255,255,${star.brightness})`;
+                this.ctx.fill();
+            });
+            this.ctx.restore();
+
+            this.ctx.save();
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+            this.ctx.restore();
+
+            this.items.forEach(item => {
+                this.ctx.save();
+                this.ctx.fillStyle = item.color;
+                this.ctx.fillRect(item.x, item.y, item.width, item.height);
+                this.ctx.font = '12px Arial';
+                this.ctx.fillStyle = '#222';
+                this.ctx.fillText(item.name, item.x, item.y+item.height+12);
+                this.ctx.restore();
+            });
+
+            this.obstacles.forEach(obs => {
+                this.ctx.save();
+                this.ctx.fillStyle = obs.color;
+                this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                this.ctx.font = '12px Arial';
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillText(obs.name, obs.x, obs.y-4);
+                this.ctx.restore();
+            });
+        }
+    }
     // --- モード選択イベント追加 ---
     function startGameWithPrefectures(prefList) {
         if (currentGameInstance && currentGameInstance._cancelAnimationFrame) {
