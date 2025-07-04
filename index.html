@@ -2,9 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <title>花火師の旅 - 47都道府県</title>
-    <!-- 可愛い丸ゴシックフォント -->
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -12,58 +11,61 @@
             background: linear-gradient(135deg, #a3d8f4 0%, #ffe6fa 100%);
             font-family: 'M PLUS Rounded 1c', 'Arial Rounded MT Bold', 'Arial', sans-serif;
             overflow: hidden; user-select: none;
+            height: 100%; width: 100%;
         }
         #gameContainer { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-        #gameCanvas { position: absolute; top: 0; left: 0; background: transparent; }
-        /* --- 可愛いUI --- */
+        #gameCanvas {
+            position: absolute; top: 0; left: 0; background: transparent;
+            width: 100vw; height: 100vh; touch-action: none;
+        }
         #ui {
-            position: absolute; top: 20px; left: 20px;
+            position: absolute; top: 2vw; left: 2vw;
             color: #a14f7a;
-            z-index: 100; font-size: 18px;
+            z-index: 100; font-size: 3.5vw;
             background: rgba(255,255,255,0.7);
             border-radius: 18px;
             box-shadow: 0 2px 8px #ffb6d540;
-            padding: 10px 20px;
-            display: flex; gap: 18px; align-items: center;
+            padding: 1vw 3vw;
+            display: flex; gap: 2vw; align-items: center;
         }
         #ui .badge {
             background: linear-gradient(90deg, #ffe6fa 0%, #e0f7fa 100%);
             border-radius: 16px;
-            padding: 4px 12px;
+            padding: 0.5vw 2vw;
             font-weight: bold;
             color: #e75480;
-            margin-right: 6px;
+            margin-right: 1vw;
             box-shadow: 0 1px 4px #ffb6d540;
             display: inline-block;
         }
         #ui .heart {
-            color: #ff6fa0; font-size: 1.1em; margin: 0 2px;
+            color: #ff6fa0; font-size: 1.1em; margin: 0 0.5vw;
             text-shadow: 0 1px 6px #fff6;
         }
         #currentPrefecture {
             position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%);
-            color: #ffff88; font-size: 48px; font-weight: bold;
+            color: #ffff88; font-size: 8vw; font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             z-index: 200; opacity: 0; transition: opacity 0.5s; text-align: center;
         }
         #hanabiName {
             position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%);
-            color: #ffb347; font-size: 28px; font-weight: bold;
+            color: #ffb347; font-size: 5vw; font-weight: bold;
             text-shadow: 2px 2px 6px #000;
             z-index: 210; opacity: 0; transition: opacity 0.5s; text-align: center;
         }
         #instructions {
-            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 10vw; left: 50%; transform: translateX(-50%);
             color: #a14f7a; text-align: center; z-index: 100;
-            font-size: 18px;
+            font-size: 4vw;
             background: rgba(255,255,255,0.8);
             border-radius: 14px;
-            padding: 8px 20px;
+            padding: 2vw 6vw;
             box-shadow: 0 1px 4px #ffb6d540;
             display: block;
         }
         #instructions .hint {
-            font-size: 14px; color: #b48bb0; margin-top: 8px;
+            font-size: 3vw; color: #b48bb0; margin-top: 8px;
         }
         .firework {
             position: absolute; pointer-events: none; z-index: 150;
@@ -77,10 +79,10 @@
         #jumpButton {
             position: fixed;
             bottom: 0; left: 0;
-            width: 100vw; height: 70px;
+            width: 100vw; height: 12vw;
             background: linear-gradient(90deg, #ffe6fa 0%, #e0f7fa 100%);
             color: #e75480;
-            font-size: 28px; text-align: center; line-height: 70px;
+            font-size: 6vw; text-align: center; line-height: 12vw;
             z-index: 300; user-select: none; border: none; outline: none;
             font-family: inherit; font-weight: bold;
             letter-spacing: 0.06em;
@@ -95,12 +97,12 @@
         #gameOver {
             position: absolute;
             top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #e75480; font-size: 40px; font-weight: bold;
+            color: #e75480; font-size: 7vw; font-weight: bold;
             text-shadow: 2px 2px 6px #fff;
             z-index: 500; display: none; text-align: center;
             background: rgba(255,255,255,0.95);
             border-radius: 18px;
-            padding: 36px 36px 24px 36px;
+            padding: 8vw 8vw 4vw 8vw;
             box-shadow: 0 2px 16px #ffb6d540;
         }
         #gameOver .fireworks {
@@ -108,9 +110,9 @@
         }
         #prefectureInfo {
             position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
-            color: #a14f7a; font-size: 20px;
+            color: #a14f7a; font-size: 4vw;
             background: rgba(255,255,255,0.92);
-            border-radius: 14px; padding: 16px 24px;
+            border-radius: 14px; padding: 3vw 4vw;
             z-index: 220; opacity: 0; transition: opacity 0.5s;
             max-width: 90vw; text-align: center;
             box-shadow: 0 1px 8px #ffb6d540;
@@ -118,7 +120,7 @@
         /* --- 可愛いモード選択画面 --- */
         #modeSelect {
             background: linear-gradient(135deg, #ffe6fa 0%, #e0f7fa 100%);
-            padding: 40px 50px 32px 50px;
+            padding: 6vw 5vw 4vw 5vw;
             border-radius: 32px;
             box-shadow: 0 8px 40px 0 rgba(255,182,193,0.18), 0 2px 8px 0 rgba(174,213,255,0.12);
             top: 50%; left: 50%; transform: translate(-50%,-50%);
@@ -128,6 +130,8 @@
             font-family: 'M PLUS Rounded 1c', 'Arial Rounded MT Bold', 'Arial', sans-serif;
             animation: popIn 0.7s cubic-bezier(.68,-0.55,.27,1.55);
             max-width: 95vw;
+            max-height: 85vh;
+            overflow-y: auto;
         }
         @keyframes popIn {
             0% { transform: scale(0.8) translate(-50%,-50%); opacity: 0; }
@@ -136,24 +140,24 @@
         #modeSelect h2 {
             color: #e75480;
             font-weight: bold;
-            font-size: 2.2em;
-            margin-bottom: 18px;
+            font-size: 6vw;
+            margin-bottom: 3vw;
             letter-spacing: 0.07em;
             text-shadow: 0 2px 10px #fff8, 0 1px 0 #fff;
             font-family: inherit;
         }
         #modeSelect .icon {
-            font-size: 2.3em;
-            margin-bottom: 2px;
+            font-size: 6vw;
+            margin-bottom: 0.5vw;
             display: inline-block;
             vertical-align: middle;
             filter: drop-shadow(0 1px 4px #fff6);
         }
         #modeSelect button {
             display: block;
-            margin: 18px auto;
-            font-size: 22px;
-            padding: 15px 44px;
+            margin: 3vw auto;
+            font-size: 5vw;
+            padding: 3vw 10vw;
             border-radius: 18px;
             border: none;
             background: linear-gradient(90deg, #ffb6d5 0%, #b9f8d3 100%);
@@ -174,47 +178,50 @@
             box-shadow: 0 6px 24px #ffb6d570, 0 2px 12px #e0c3fc55;
         }
         #modeSelect label {
-            font-size: 18px;
+            font-size: 4vw;
             color: #d18ca5;
             display: block;
-            margin-top: 22px;
-            margin-bottom: 8px;
+            margin-top: 4vw;
+            margin-bottom: 2vw;
             font-weight: bold;
             letter-spacing: 0.04em;
             font-family: inherit;
         }
         #modeSelect select {
-            font-size: 18px;
-            margin: 0 8px;
+            font-size: 4vw;
+            margin: 0 2vw;
             border-radius: 12px;
             border: 2.5px solid #ffb6d5;
             background: #fff8fc;
             color: #a14f7a;
-            padding: 8px 10px;
+            padding: 1vw 2vw;
             box-shadow: 0 1px 6px #ffb6d540;
             outline: none;
             font-family: inherit;
-            width: 180px;
-            transition: border 0.15s;
+            width: 90%;
+            max-width: 400px;
+            height: auto;
+            min-height: 28vw;
         }
         #modeSelect select:focus {
             border: 2.5px solid #e75480;
             background: #ffe6fa;
         }
         #modeSelect .hint {
-            font-size: 14px;
+            font-size: 3vw;
             color: #b48bb0;
-            margin-top: 8px;
+            margin-top: 1vw;
             margin-bottom: 0;
             font-family: inherit;
         }
         /* レスポンシブ */
         @media (max-width: 600px) {
-            #ui { font-size: 15px; padding: 6px 8px; gap: 10px;}
-            #modeSelect { padding: 18px 2vw 12px 2vw; }
-            #modeSelect h2 { font-size: 1.3em; }
-            #modeSelect button { font-size: 1em; padding: 10px 10vw;}
-            #instructions { font-size: 15px; padding: 6px 6vw;}
+            #ui { font-size: 4vw; padding: 1vw 2vw; gap: 1vw;}
+            #modeSelect { padding: 4vw 3vw 3vw 3vw; }
+            #modeSelect h2 { font-size: 5vw; }
+            #modeSelect button { font-size: 4vw; padding: 2.5vw 10vw;}
+            #instructions { font-size: 4vw; padding: 2vw 4vw;}
+            #modeSelect select { min-height: 24vw; }
         }
     </style>
 </head>
@@ -226,7 +233,7 @@
             <span class="badge">スコア: <span id="score">0</span></span>
             <span class="badge">ライフ: <span id="life"></span></span>
             <span class="badge">時間: <span id="timer">0:00</span></span>
-            <span class="badge">速度: <span id="speed">1.0x</span></span>
+            <span class="badge">速度: <span id="speed">0.5x</span></span>
         </div>
         <div id="currentPrefecture"></div>
         <div id="hanabiName"></div>
@@ -317,8 +324,10 @@
             select.appendChild(opt);
         });
     }
+
     // --- ゲームインスタンス管理 ---
     let currentGameInstance = null;
+
     // --- FireworksJourneyGameクラス本体 ---
     class FireworksJourneyGame {
         constructor(selectedPrefectures) {
@@ -332,21 +341,20 @@
             this.prefectures = selectedPrefectures;
             this.currentPrefectureIndex = 0;
             this.sectionStartTime = Date.now();
-            this.gameSpeed = 1.0;
+            this.gameSpeed = 0.5; // スクロール速度を遅くスタート
             this.score = 0;
-            this.life = 3;
+            this.life = 100; // ライフを100に設定
             this.sectionTimeLimit = 60; // 1県あたり1分
             this.player = {
                 x: 100,
-                y: this.canvas.height - 150,
+                y: 0,
                 width: 40,
                 height: 60,
                 velocityY: 0,
                 isJumping: false,
-                groundY: this.canvas.height - 150,
-                animFrame: 0,
                 isHoldingJump: false,
                 jumpStartTime: 0,
+                groundY: 0,
             };
             this.obstacles = [];
             this.items = [];
@@ -364,22 +372,23 @@
             this.updateUI();
             this.gameLoop();
         }
+
         _cancelAnimationFrame() {
             if (this._gameLoopId) {
                 cancelAnimationFrame(this._gameLoopId);
                 this._gameLoopId = null;
             }
         }
+
         resizeCanvas() {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
-            if (this.player) {
-                this.player.groundY = this.canvas.height - 150;
-                if (!this.player.isJumping) {
-                    this.player.y = this.player.groundY;
-                }
+            this.player.groundY = this.canvas.height - 150;
+            if (!this.player.isJumping) {
+                this.player.y = this.player.groundY;
             }
         }
+
         generateStars() {
             const stars = [];
             for (let i = 0; i < 100; i++) {
@@ -421,42 +430,53 @@
                 window.addEventListener('resize', this._resizeListener);
             }
         }
+
         startJump() {
             if (!this.player.isJumping && this.isGameRunning && this.player.y >= this.player.groundY) {
                 this.player.isJumping = true;
                 this.player.isHoldingJump = true;
                 this.player.jumpStartTime = Date.now();
-                this.player.velocityY = -15;
-            } else if (this.player.isJumping) {
-                this.player.isHoldingJump = true;
             }
         }
+
         endJump() {
             this.player.isHoldingJump = false;
         }
+
         update() {
             if (!this.isGameRunning) return;
-            // ホールドジャンプ
+
+            // ジャンプ処理
             if (this.player.isJumping) {
                 const jumpDuration = (Date.now() - this.player.jumpStartTime) / 1000;
                 if (this.player.isHoldingJump && jumpDuration < 3.0) {
+                    // 押している間は一定速度で上昇
                     this.player.velocityY = -10;
                 } else {
-                    this.player.isJumping = false;
+                    // 3秒経過または離したら自由落下
+                    this.player.isHoldingJump = false;
                 }
             }
-            // 重力
-            this.player.velocityY += 0.8;
+
+            // 重力処理（ジャンプ中でないか押してない場合）
+            if (!this.player.isHoldingJump) {
+                this.player.velocityY += 0.8;
+            }
+
             this.player.y += this.player.velocityY;
-            // 地面
+
+            // 地面判定
             if (this.player.y >= this.player.groundY) {
                 this.player.y = this.player.groundY;
                 this.player.velocityY = 0;
                 this.player.isJumping = false;
                 this.player.isHoldingJump = false;
             }
-            // 背景
+
+            // 背景スクロール
             this.background.offset += this.gameSpeed * 2;
+
+            // 星の移動
             this.stars.forEach(star => {
                 star.x -= this.gameSpeed * 0.5;
                 if (star.x < -10) {
@@ -464,23 +484,25 @@
                     star.y = Math.random() * this.canvas.height * 0.6;
                 }
             });
-            });
-            // アイテム
+
+            // アイテム出現
             if (Math.random() < 0.012) {
                 const item = this.prefectures[this.currentPrefectureIndex].item;
                 this.items.push({
                     x: this.canvas.width,
-                    y: this.player.groundY - 30 - Math.random()*50,
+                    y: this.player.groundY - 30 - Math.random() * 50,
                     width: 36,
                     height: 36,
                     color: item.color,
                     name: item.name,
-                    sparkle: Math.random() < 0.13 // たまにレアキラキラ
+                    sparkle: Math.random() < 0.13
                 });
             }
+
+            // アイテム処理
             this.items = this.items.filter(item => {
                 item.x -= this.gameSpeed * 2;
-                // アイテム取得判定
+                // 取得判定
                 if (
                     this.player.x < item.x + item.width &&
                     this.player.x + this.player.width > item.x &&
@@ -494,7 +516,8 @@
                 }
                 return item.x > -item.width;
             });
-            // 障害物
+
+            // 障害物出現
             if (Math.random() < 0.022) {
                 const obs = this.prefectures[this.currentPrefectureIndex].obstacle;
                 this.obstacles.push({
@@ -507,6 +530,8 @@
                     shake: 0
                 });
             }
+
+            // 障害物処理
             this.obstacles = this.obstacles.filter(obstacle => {
                 obstacle.x -= this.gameSpeed * 3;
                 // 衝突判定
@@ -542,6 +567,7 @@
                 if (obstacle.shake > 0) obstacle.shake--;
                 return obstacle.x > -obstacle.width;
             });
+
             this.checkSectionTime();
             this.updateUI();
         }
@@ -551,6 +577,7 @@
                 this.completePrefecture();
             }
         }
+
         completePrefecture() {
             this.currentPrefectureIndex++;
             this.sectionStartTime = Date.now();
@@ -564,6 +591,7 @@
             this.showPrefectureInfo();
             this.playBGM();
         }
+
         showCurrentPrefecture() {
             const prefectureElement = document.getElementById('currentPrefecture');
             const hanabiElement = document.getElementById('hanabiName');
@@ -577,6 +605,7 @@
                 hanabiElement.style.opacity = '0';
             }, 2500);
         }
+
         showPrefectureInfo() {
             const info = this.prefectures[this.currentPrefectureIndex].info;
             const infoDiv = document.getElementById('prefectureInfo');
@@ -586,9 +615,11 @@
                 infoDiv.style.opacity = '0';
             }, 4000);
         }
+
         showInstructions() {
             document.getElementById('instructions').style.display = 'block';
         }
+
         launchFireworks(isBig) {
             const div = document.createElement('div');
             div.className = 'firework';
@@ -604,6 +635,7 @@
             document.body.appendChild(div);
             setTimeout(() => { div.remove(); }, 800);
         }
+
         showPop(text, x, y, sparkle) {
             const div = document.createElement('div');
             div.textContent = sparkle ? "✨+300✨" : text;
@@ -625,21 +657,22 @@
             }, 20);
             setTimeout(() => { div.remove(); }, 1100);
         }
+
         playBGM() {
-            // サウンドを追加したい場合はここにAudio再生処理
+            // BGM再生処理（必要に応じて実装）
         }
+
         updateUI() {
             document.getElementById('score').textContent = this.score;
-            // ライフをハートで表示
-            let heartStr = "";
-            for (let i = 0; i < this.life; i++) heartStr += "❤";
-            document.getElementById('life').innerHTML = `<span class="heart">${heartStr}</span>`;
-            document.getElementById('prefectureCount').textContent = `${this.currentPrefectureIndex+1}/${this.prefectures.length}`;
-            const elapsed = Math.floor((Date.now() - this.sectionStartTime)/1000);
+            // ライフを数字で表示（100まで対応）
+            document.getElementById('life').textContent = `${this.life} / 100`;
+            document.getElementById('prefectureCount').textContent = `${this.currentPrefectureIndex + 1}/${this.prefectures.length}`;
+            const elapsed = Math.floor((Date.now() - this.sectionStartTime) / 1000);
             const remain = Math.max(0, this.sectionTimeLimit - elapsed);
-            document.getElementById('timer').textContent = `${Math.floor(remain/60)}:${('0'+(remain%60)).slice(-2)}`;
+            document.getElementById('timer').textContent = `${Math.floor(remain / 60)}:${('0' + (remain % 60)).slice(-2)}`;
             document.getElementById('speed').textContent = `${this.gameSpeed.toFixed(1)}x`;
         }
+
         gameOver() {
             this.isGameRunning = false;
             this._cancelAnimationFrame();
@@ -648,6 +681,7 @@
             document.getElementById('finalScore').textContent = `スコア: ${this.score}`;
             document.getElementById('jumpButton').style.display = 'none';
         }
+
         completeGame() {
             this.isGameRunning = false;
             this._cancelAnimationFrame();
@@ -656,132 +690,144 @@
             document.getElementById('finalScore').textContent = `クリア！スコア: ${this.score}`;
             document.getElementById('jumpButton').style.display = 'none';
         }
+
         gameLoop() {
             if (!this.isGameRunning) return;
             this.update();
             this.draw();
             this._gameLoopId = requestAnimationFrame(() => this.gameLoop());
         }
+
         draw() {
             // 背景
             this.ctx.fillStyle = this.prefectures[this.currentPrefectureIndex].bg || '#a3d8f4';
-            this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
             // 星
             this.ctx.save();
             this.ctx.globalAlpha = 0.7;
             this.stars.forEach(star => {
                 this.ctx.beginPath();
-                this.ctx.arc(star.x % this.canvas.width, star.y, star.size, 0, Math.PI*2);
+                this.ctx.arc(star.x % this.canvas.width, star.y, star.size, 0, Math.PI * 2);
                 this.ctx.fillStyle = `rgba(255,255,255,${star.brightness})`;
                 this.ctx.fill();
             });
             this.ctx.restore();
+
             // 障害物
             this.obstacles.forEach(obs => {
                 this.ctx.save();
-                // 四角＋白縁＋警告アイコン
-                let shakeX = obs.shake ? (Math.random()-0.5)*obs.shake : 0;
-                let shakeY = obs.shake ? (Math.random()-0.5)*obs.shake : 0;
+                let shakeX = obs.shake ? (Math.random() - 0.5) * obs.shake : 0;
+                let shakeY = obs.shake ? (Math.random() - 0.5) * obs.shake : 0;
                 this.ctx.fillStyle = obs.color;
                 this.ctx.strokeStyle = "#fff";
                 this.ctx.lineWidth = 3;
-                this.ctx.fillRect(obs.x+shakeX, obs.y+shakeY, obs.width, obs.height);
-                this.ctx.strokeRect(obs.x+shakeX, obs.y+shakeY, obs.width, obs.height);
-                // アイコン
+                this.ctx.fillRect(obs.x + shakeX, obs.y + shakeY, obs.width, obs.height);
+                this.ctx.strokeRect(obs.x + shakeX, obs.y + shakeY, obs.width, obs.height);
+
                 this.ctx.font = 'bold 18px "M PLUS Rounded 1c", Arial';
                 this.ctx.textAlign = "center";
-                this.ctx.fillText("⚠️", obs.x+obs.width/2+shakeX, obs.y+obs.height/2+6+shakeY);
-                // 名称
+                this.ctx.fillText("⚠️", obs.x + obs.width / 2 + shakeX, obs.y + obs.height / 2 + 6 + shakeY);
+
                 this.ctx.font = 'bold 12px "M PLUS Rounded 1c", Arial';
                 this.ctx.fillStyle = '#775533';
-                this.ctx.fillText(obs.name, obs.x+obs.width/2+shakeX, obs.y-6+shakeY);
+                this.ctx.fillText(obs.name, obs.x + obs.width / 2 + shakeX, obs.y - 6 + shakeY);
                 this.ctx.restore();
             });
             // アイテム
             this.items.forEach(item => {
                 this.ctx.save();
-                // 丸＋パステル外枠＋キラキラ
                 this.ctx.beginPath();
-                this.ctx.arc(item.x+item.width/2, item.y+item.height/2, item.width/2, 0, Math.PI*2);
+                this.ctx.arc(item.x + item.width / 2, item.y + item.height / 2, item.width / 2, 0, Math.PI * 2);
                 this.ctx.fillStyle = item.color;
                 this.ctx.shadowColor = "#fffbe8";
                 this.ctx.shadowBlur = 12;
                 this.ctx.fill();
-                // 外枠
+
                 this.ctx.lineWidth = 3;
                 this.ctx.strokeStyle = "#fffbe8";
                 this.ctx.stroke();
-                // キラキラ
+
                 if (item.sparkle) {
                     this.ctx.globalAlpha = 0.7;
                     this.ctx.beginPath();
-                    this.ctx.arc(item.x+item.width/2, item.y+item.height/2, item.width/4, 0, Math.PI*2);
+                    this.ctx.arc(item.x + item.width / 2, item.y + item.height / 2, item.width / 4, 0, Math.PI * 2);
                     this.ctx.fillStyle = "#fff";
                     this.ctx.fill();
                     this.ctx.globalAlpha = 1.0;
                 }
-                // アイテム名
+
                 this.ctx.font = 'bold 13px "M PLUS Rounded 1c", Arial';
                 this.ctx.fillStyle = '#e75480';
                 this.ctx.textAlign = "center";
-                this.ctx.fillText(item.name, item.x+item.width/2, item.y+item.height+16);
+                this.ctx.fillText(item.name, item.x + item.width / 2, item.y + item.height + 16);
                 this.ctx.restore();
             });
-            // プレイヤーキャラクター（可愛いゆるキャラ）
+
+            // プレイヤーキャラクター
             this.ctx.save();
             const px = this.player.x, py = this.player.y;
+
             // 体
             this.ctx.beginPath();
-            this.ctx.ellipse(px+20, py+50, 18, 24, 0, 0, Math.PI*2);
+            this.ctx.ellipse(px + 20, py + 50, 18, 24, 0, 0, Math.PI * 2);
             this.ctx.fillStyle = "#ffe6fa";
             this.ctx.shadowColor = "#e0f7fa";
             this.ctx.shadowBlur = 8;
             this.ctx.fill();
+
             // 顔
             this.ctx.beginPath();
-            this.ctx.arc(px+20, py+26, 20, 0, Math.PI*2);
+            this.ctx.arc(px + 20, py + 26, 20, 0, Math.PI * 2);
             this.ctx.fillStyle = "#fffbe8";
             this.ctx.shadowColor = "#ffb6d5";
             this.ctx.shadowBlur = 12;
             this.ctx.fill();
+
             // ほっぺ
             this.ctx.beginPath();
-            this.ctx.arc(px+12, py+34, 4, 0, Math.PI*2);
-            this.ctx.arc(px+28, py+34, 4, 0, Math.PI*2);
+            this.ctx.arc(px + 12, py + 34, 4, 0, Math.PI * 2);
+            this.ctx.arc(px + 28, py + 34, 4, 0, Math.PI * 2);
             this.ctx.fillStyle = "#ffb6d5";
             this.ctx.globalAlpha = 0.5;
             this.ctx.fill();
             this.ctx.globalAlpha = 1.0;
+
             // 目
             this.ctx.beginPath();
-            this.ctx.arc(px+14, py+26, 3, 0, Math.PI*2);
-            this.ctx.arc(px+26, py+26, 3, 0, Math.PI*2);
+            this.ctx.arc(px + 14, py + 26, 3, 0, Math.PI * 2);
+            this.ctx.arc(px + 26, py + 26, 3, 0, Math.PI * 2);
             this.ctx.fillStyle = "#a14f7a";
             this.ctx.fill();
+
             // 口
             this.ctx.beginPath();
-            this.ctx.arc(px+20, py+32, 5, Math.PI*0.15, Math.PI*0.85);
+            this.ctx.arc(px + 20, py + 32, 5, Math.PI * 0.15, Math.PI * 0.85);
             this.ctx.lineWidth = 2;
             this.ctx.strokeStyle = "#e75480";
             this.ctx.stroke();
+
             // 手
             this.ctx.beginPath();
-            this.ctx.arc(px+6, py+50, 5, 0, Math.PI*2);
-            this.ctx.arc(px+34, py+50, 5, 0, Math.PI*2);
+            this.ctx.arc(px + 6, py + 50, 5, 0, Math.PI * 2);
+            this.ctx.arc(px + 34, py + 50, 5, 0, Math.PI * 2);
             this.ctx.fillStyle = "#ffe6fa";
             this.ctx.fill();
+
             // 影（ジャンプ中は下に影）
             if (this.player.y < this.player.groundY) {
                 this.ctx.globalAlpha = 0.3;
                 this.ctx.beginPath();
-                this.ctx.ellipse(px+20, this.player.groundY+60, 18, 7, 0, 0, Math.PI*2);
+                this.ctx.ellipse(px + 20, this.player.groundY + 60, 18, 7, 0, 0, Math.PI * 2);
                 this.ctx.fillStyle = "#a3d8f4";
                 this.ctx.fill();
                 this.ctx.globalAlpha = 1.0;
             }
+
             this.ctx.restore();
         }
     }
+
     // --- モード選択イベント追加 ---
     function startGameWithPrefectures(prefList) {
         if (currentGameInstance && currentGameInstance._cancelAnimationFrame) {
@@ -794,14 +840,17 @@
         document.getElementById('instructions').style.display = 'block';
         new FireworksJourneyGame(prefList);
     }
-    document.getElementById('fullModeBtn').onclick = function() {
+
+    document.getElementById('fullModeBtn').onclick = function () {
         startGameWithPrefectures([...prefecturesData]);
     };
-    document.getElementById('shortModeBtn').onclick = function() {
+
+    document.getElementById('shortModeBtn').onclick = function () {
         const shuffled = [...prefecturesData].sort(() => Math.random() - 0.5);
         startGameWithPrefectures(shuffled.slice(0, 5));
     };
-    document.getElementById('selectModeBtn').onclick = function() {
+
+    document.getElementById('selectModeBtn').onclick = function () {
         const select = document.getElementById('selectPrefecture');
         const selected = Array.from(select.selectedOptions).map(opt => prefecturesData[opt.value]);
         if (selected.length === 0) {
@@ -810,7 +859,8 @@
         }
         startGameWithPrefectures(selected);
     };
-    document.getElementById('retryBtn').onclick = function() {
+
+    document.getElementById('retryBtn').onclick = function () {
         if (currentGameInstance && currentGameInstance._cancelAnimationFrame) {
             currentGameInstance._cancelAnimationFrame();
         }
@@ -821,6 +871,7 @@
         document.getElementById('modeSelect').style.display = 'block';
         populatePrefectureSelect();
     };
+
     window.addEventListener('DOMContentLoaded', populatePrefectureSelect);
     </script>
 </body>
