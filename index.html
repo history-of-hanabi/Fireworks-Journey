@@ -50,22 +50,24 @@
     #ui .badge {
       background: linear-gradient(90deg, #ffe6fa 0%, #e0f7fa 100%);
       border-radius: 16px;
-      padding: 0.5vw 2vw;
+      padding: 0.5vw 4vw;
       font-weight: bold;
       color: #e75480;
       margin-right: 1vw;
       box-shadow: 0 1px 4px #ffb6d540;
       display: inline-block;
-      min-width: 18vw;
-      font-size: 1.25em;
+      min-width: 24vw;
+      font-size: 1.3em;
       text-align: center;
       box-sizing: border-box;
+      white-space: nowrap;
+      overflow: visible;
     }
     #score, #life {
       color: #e75480;
       font-weight: bold;
       font-size: 1.4em;
-      min-width: 5vw;
+      min-width: 7vw;
       letter-spacing: 0.05em;
       display: inline-block;
     }
@@ -83,9 +85,24 @@
       z-index: 210; opacity: 0; transition: opacity 0.5s; text-align: center;
       pointer-events: none;
     }
+    #prefectureInfo {
+      position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
+      color: #a14f7a; font-size: 4vw;
+      background: rgba(255,255,255,0.92);
+      border-radius: 14px; padding: 3vw 4vw;
+      z-index: 220; opacity: 0; transition: opacity 0.5s;
+      max-width: 90vw; text-align: center;
+      box-shadow: 0 1px 8px #ffb6d540;
+      pointer-events: none;
+    }
     #instructions {
-      position: absolute; bottom: 10vw; left: 50%; transform: translateX(-50%);
-      color: #a14f7a; text-align: center; z-index: 100;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 14vw; /* ジャンプボタンの高さ(12vw)＋余白 */
+      color: #a14f7a;
+      text-align: center;
+      z-index: 90; /* ジャンプボタン(300)より下 */
       font-size: 4vw;
       background: rgba(255,255,255,0.8);
       border-radius: 14px;
@@ -94,6 +111,7 @@
       display: block;
       max-width: 90vw;
       box-sizing: border-box;
+      pointer-events: none;
     }
     #instructions .hint {
       font-size: 3vw; color: #b48bb0; margin-top: 8px;
@@ -143,16 +161,6 @@
     }
     #gameOver .fireworks {
       font-size: 2em; margin-bottom: 12px; display: block;
-    }
-    #prefectureInfo {
-      position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
-      color: #a14f7a; font-size: 4vw;
-      background: rgba(255,255,255,0.92);
-      border-radius: 14px; padding: 3vw 4vw;
-      z-index: 220; opacity: 0; transition: opacity 0.5s;
-      max-width: 90vw; text-align: center;
-      box-shadow: 0 1px 8px #ffb6d540;
-      pointer-events: none;
     }
     /* --- モード選択画面 --- */
     #modeSelect {
@@ -231,8 +239,7 @@
       letter-spacing: 0.04em;
       font-family: inherit;
     }
-    #modeSelect select,
-    #modeSelect .pref-checkbox-list {
+    #modeSelect select {
       font-size: 4vw;
       margin: 0 2vw;
       border-radius: 12px;
@@ -263,26 +270,13 @@
       margin-bottom: 0;
       font-family: inherit;
     }
-    #modeSelect .pref-checkbox-list label {
-      display: block;
-      margin-bottom: 1vw;
-      font-size: 4vw;
-      text-align: left;
-      color: #a14f7a;
-      cursor: pointer;
-    }
-    #modeSelect .pref-checkbox-list input[type="checkbox"] {
-      transform: scale(1.5);
-      margin-right: 1vw;
-      vertical-align: middle;
-    }
     @media (max-width: 600px) {
       #ui { font-size: 4vw; padding: 1vw 2vw; gap: 1vw;}
       #modeSelect { padding: 4vw 3vw 3vw 3vw; }
       #modeSelect h2 { font-size: 5vw; }
       #modeSelect button { font-size: 4vw; padding: 2.5vw 10vw;}
       #instructions { font-size: 4vw; padding: 2vw 4vw;}
-      #modeSelect select, #modeSelect .pref-checkbox-list { min-height: 24vw; }
+      #modeSelect select { min-height: 24vw; }
     }
   </style>
 </head>
@@ -333,40 +327,22 @@
     {name:'沖縄県',hanabi:'海洋博公園花火大会',bg:'#ffcc44',info:'シーサーやゴーヤが名物。美ら海水族館や首里城も。',item:{name:'シーサー',color:'#ffcc44'},obstacle:{name:'ゴーヤ',color:'#228b22'}}
   ];
 
-  // --- 県選択UIをスマホ・PCで切り替え ---
+  // --- 県選択UI（常にセレクトボックス方式） ---
   function createPrefectureSelector() {
     const area = document.getElementById('prefectureSelectorArea');
     area.innerHTML = '';
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-      // スマホならチェックボックスリストに切り替え
-      const container = document.createElement('div');
-      container.className = 'pref-checkbox-list';
-      prefecturesData.forEach((pref, idx) => {
-        const label = document.createElement('label');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = idx;
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(pref.name));
-        container.appendChild(label);
-      });
-      area.appendChild(container);
-      document.getElementById('selectHint').textContent = '※ タップで複数選択できます';
-    } else {
-      // PCならマルチセレクトボックス
-      const select = document.createElement('select');
-      select.id = 'selectPrefecture';
-      select.multiple = true;
-      select.size = 7;
-      prefecturesData.forEach((pref, idx) => {
-        const option = document.createElement('option');
-        option.value = idx;
-        option.textContent = pref.name;
-        select.appendChild(option);
-      });
-      area.appendChild(select);
-      document.getElementById('selectHint').textContent = '※ CtrlキーやShiftキーで複数選択できます';
-    }
+    const select = document.createElement('select');
+    select.id = 'selectPrefecture';
+    select.multiple = true;
+    select.size = 7;
+    prefecturesData.forEach((pref, idx) => {
+      const option = document.createElement('option');
+      option.value = idx;
+      option.textContent = pref.name;
+      select.appendChild(option);
+    });
+    area.appendChild(select);
+    document.getElementById('selectHint').textContent = '※ CtrlキーやShiftキーで複数選択できます';
   }
 
   // --- ゲームインスタンス管理 ---
@@ -400,17 +376,8 @@
   };
 
   document.getElementById('selectModeBtn').onclick = () => {
-    const area = document.getElementById('prefectureSelectorArea');
-    let selected = [];
-    if (area.querySelector('select')) {
-      // PCマルチセレクト
-      const select = area.querySelector('select');
-      selected = Array.from(select.selectedOptions).map(opt => prefecturesData[Number(opt.value)]);
-    } else {
-      // スマホチェックボックス
-      const checkedBoxes = area.querySelectorAll('input[type="checkbox"]:checked');
-      selected = Array.from(checkedBoxes).map(cb => prefecturesData[Number(cb.value)]);
-    }
+    const select = document.getElementById('selectPrefecture');
+    const selected = Array.from(select.selectedOptions).map(opt => prefecturesData[Number(opt.value)]);
     startGameWithPrefectures(selected);
   };
 
@@ -551,7 +518,8 @@ class FireworksJourneyGame {
     this.player.isHoldingJump = false;
   }
 
-  // ...（update, draw, gameLoopなど次回以降に続きます）...
+  // update, draw, gameLoopなどは次回以降に続きます
+}
 </script>
 <script>
   // FireworksJourneyGameクラスの続き
@@ -678,7 +646,7 @@ class FireworksJourneyGame {
     this.updateUI();
   };
 
-  // ...（次回は描画処理など続きます）...
+  // ...（描画処理など続きます）...
 </script>
 <script>
   FireworksJourneyGame.prototype.checkSectionTime = function() {
