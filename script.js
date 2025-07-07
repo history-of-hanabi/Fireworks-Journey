@@ -549,113 +549,35 @@ class FireworksJourneyGame {
             let shakeX = obs.shake ? (Math.random() - 0.5) * obs.shake : 0;
             let shakeY = obs.shake ? (Math.random() - 0.5) * obs.shake : 0;
             this.ctx.font = 'bold 40px Arial';
-            this.ctx.textAli
-              // ポップアップ表示関数
-    showPop(text, x, y, isSparkle = false, isDamage = false) {
-        this.popups.push({
-            text: text,
-            x: x,
-            y: y - 30,
-            opacity: 1,
-            sizeBoost: isSparkle ? 10 : 0,
-            isSparkle: isSparkle,
-            isDamage: isDamage
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            // 影を追加 (視認性向上)
+            this.ctx.shadowColor = '#8b0000';
+            this.ctx.shadowBlur = 10;
+            this.ctx.fillText(obs.emoji, obs.x + obs.width / 2 + shakeX, obs.y + obs.height / 2 + shakeY);
+            this.ctx.restore();
+        });
+
+        // ポップアップテキストの描画
+        this.popups = this.popups.filter(popup => {
+            this.ctx.save();
+            this.ctx.font = `bold ${20 + popup.sizeBoost}px "M PLUS Rounded 1c", Arial`;
+            this.ctx.fillStyle = popup.isDamage ? 'red' : (popup.isSparkle ? '#ffd700' : 'white');
+            this.ctx.shadowColor = popup.isDamage ? 'darkred' : (popup.isSparkle ? '#ff8c00' : '#333');
+            this.ctx.shadowBlur = 8;
+            this.ctx.textAlign = 'center';
+            this.ctx.globalAlpha = popup.opacity;
+            this.ctx.fillText(popup.text, popup.x, popup.y);
+            this.ctx.restore();
+
+            popup.y -= 2;
+            popup.opacity -= 0.02;
+            popup.sizeBoost *= 0.98;
+
+            return popup.opacity > 0;
         });
     }
 
-    // UIの更新
-    updateUI() {
-        const elapsed = Math.floor((Date.now() - this.sectionStartTime) / 1000);
-        const remainingTime = this.sectionTimeLimit - elapsed;
-        const minutes = Math.floor(remainingTime / 60);
-        const seconds = remainingTime % 60;
-
-        document.getElementById('score').textContent = this.score;
-        document.getElementById('life').textContent = `${this.life} / 100`;
-        document.getElementById('prefectureCount').textContent = `${this.currentPrefectureIndex + 1}/${this.prefectures.length}`;
-        document.getElementById('timer').textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    }
-
-    // 都道府県情報の表示 (よりシンプルに)
-    showCurrentPrefecture() {
-        const currentPref = this.prefectures[this.currentPrefectureIndex];
-        const prefectureEl = document.getElementById('currentPrefecture');
-        
-        prefectureEl.textContent = currentPref.name;
-        prefectureEl.style.opacity = 1;
-        // 情報はポップアップで短時間表示
-        this.showPop(`${currentPref.name}へようこそ！ ${currentPref.info}`, this.canvas.width / 2, this.canvas.height / 2 + 50, false, false);
-
-        setTimeout(() => {
-            prefectureEl.style.opacity = 0;
-        }, 3000); // 3秒後に消える
-    }
-
-    // 花火を打ち上げるアニメーション
-    launchFireworks(isBig = false) {
-        const firework = document.createElement('div');
-        firework.className = 'firework';
-        firework.textContent = isBig ? '🎇' : '🎆'; // 豪華な花火絵文字か通常の花火絵文字
-        firework.style.left = `${Math.random() * 80 + 10}%`;
-        firework.style.top = `${Math.random() * 40 + 10}%`;
-
-        if (isBig) {
-            firework.style.fontSize = '4em';
-        } else {
-            firework.style.fontSize = '2em';
-        }
-
-        document.getElementById('gameContainer').appendChild(firework);
-
-        firework.addEventListener('animationend', () => {
-            firework.remove();
-        });
-    }
-
-    // 次の都道府県へ移動
-    moveToNextPrefecture() {
-        this.currentPrefectureIndex++;
-        if (this.currentPrefectureIndex < this.prefectures.length) {
-            this.sectionStartTime = Date.now();
-            this.obstacles = [];
-            this.items = [];
-            this.gameSpeed = 0.5;
-            this.showCurrentPrefecture();
-            this.updateUI();
-            this.life = Math.min(100, this.life + 20); // ライフ少し回復
-            this.launchFireworks(true); // 県クリアで大きな花火
-        } else {
-            // 全ての都道府県をクリアした場合
-            this.isGameRunning = false;
-            this._cancelAnimationFrame();
-            document.getElementById('gameOverText').textContent = '全国制覇おめでとう！';
-            document.getElementById('finalScore').textContent = `最終スコア: ${this.score}点`;
-            document.getElementById('gameOver').style.display = 'flex';
-            document.getElementById('jumpButton').style.display = 'none';
-            document.getElementById('ui').style.display = 'none';
-        }
-    }
-
-    // ゲームオーバー処理
-    gameOver() {
-        this.isGameRunning = false;
-        this._cancelAnimationFrame();
-        document.getElementById('gameOverText').textContent = 'ゲームオーバー';
-        document.getElementById('finalScore').textContent = `最終スコア: ${this.score}点`;
-        document.getElementById('gameOver').style.display = 'flex';
-        document.getElementById('jumpButton').style.display = 'none';
-        document.getElementById('ui').style.display = 'none';
-    }
-
-    // ゲームループ
-    gameLoop() {
-        this.update();
-        this.draw();
-        if (this.isGameRunning) {
-            this._gameLoopId = requestAnimationFrame(() => this.gameLoop());
-        }
-    }
-}
     // ポップアップ表示関数
     showPop(text, x, y, isSparkle = false, isDamage = false) {
         this.popups.push({
