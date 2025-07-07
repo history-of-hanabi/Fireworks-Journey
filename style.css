@@ -1,0 +1,197 @@
+body {
+    margin: 0;
+    overflow: hidden; /* スクロールバー非表示 */
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    background-color: #add8e6; /* 初期背景色 (水色) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+}
+
+#gameContainer {
+    position: relative;
+    width: 100vw; /* 画面幅いっぱいに */
+    height: 100vh; /* 画面高さいっぱいに */
+    display: flex;
+    flex-direction: column; /* 要素を縦に並べる */
+    justify-content: space-between; /* 上下均等配置 */
+    align-items: center;
+    background-color: transparent; /* 背景はゲームCanvasに任せる */
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* CanvasをUIの下に配置 */
+    display: block; /* 余白をなくす */
+}
+
+#ui {
+    position: relative; /* z-indexを有効にするため */
+    z-index: 10; /* UIをCanvasの上に配置 */
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    padding: 10px 0;
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明の背景 */
+    color: white;
+    font-size: 1.2em;
+    box-sizing: border-box; /* paddingをwidthに含める */
+    top: 0; /* 上部に固定 */
+    left: 0;
+}
+
+#jumpButton {
+    position: relative; /* z-indexを有効にするため */
+    z-index: 10; /* ボタンをCanvasの上に配置 */
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 2em;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px; /* 下部からのマージン */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    touch-action: manipulation; /* タッチデバイスでの遅延防止 */
+}
+
+#jumpButton:active {
+    background-color: #45a049;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    transform: translateY(3px);
+}
+
+#modeSelect, #gameOver {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 20; /* 最前面に表示 */
+}
+
+#modeSelect h2, #gameOver h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+.mode-button, #retryBtn, #selectModeStartBtn {
+    background-color: #ff69b4; /* ピンク */
+    color: white;
+    padding: 15px 30px;
+    margin: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.5em;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease;
+}
+
+.mode-button:hover, #retryBtn:hover, #selectModeStartBtn:hover {
+    background-color: #ff1493; /* 濃いピンク */
+}
+
+#prefectureSelectorArea {
+    margin-top: 20px;
+    text-align: center;
+}
+
+#prefectureSelect {
+    width: 80%;
+    max-width: 300px;
+    min-height: 150px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid #ff69b4;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1.1em;
+    -webkit-appearance: none; /* iOSでのデフォルトスタイルを無効化 */
+    -moz-appearance: none; /* Firefoxでのデフォルトスタイルを無効化 */
+    appearance: none; /* 標準的なデフォルトスタイルを無効化 */
+    outline: none; /* フォーカス時のアウトラインを消す */
+}
+
+#prefectureSelect option {
+    background-color: #333; /* オプションの背景色 */
+    color: white;
+    padding: 8px;
+}
+
+#selectHint {
+    font-size: 0.9em;
+    margin-top: 5px;
+    color: #eee;
+}
+
+#gameOver p {
+    font-size: 1.5em;
+    margin-top: 10px;
+}
+
+#currentPrefecture {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 10px black;
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 1s ease-out;
+}
+
+.firework {
+    position: absolute;
+    animation: firework-burst 1s forwards;
+    pointer-events: none;
+    z-index: 5; /* キャラクターより下、背景より上に */
+}
+
+@keyframes firework-burst {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+/* 小さな画面向けの調整 */
+@media (max-width: 768px) {
+    #ui {
+        font-size: 1em;
+        padding: 5px 0;
+    }
+
+    #jumpButton {
+        width: 100px;
+        height: 100px;
+        font-size: 1.8em;
+    }
+
+    .mode-button, #retryBtn, #selectModeStartBtn {
+        padding: 10px 20px;
+        font-size: 1.2em;
+    }
+
+    #modeSelect h2, #gameOver h2 {
+        font-size: 1.5em;
+    }
+}
